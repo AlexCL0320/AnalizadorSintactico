@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta>
+    <meta>
+    <title>Ejemplo HTML5</title>
+    <style>
+    </style>
+</head>
+<body>
+    <h1>Bienvenido a mi página web</h1>
+    <p>Esta es una página de ejemplo para mostrar las características de HTML5.</p>
+
+    <!-- Sección de contenido -->
+    <section>
+        <h2>Nuevos elementos semánticos</h2>
+        <article>
+            <header>
+                <h3>Título del artículo</h3>
+            </header>
+            <p>Contenido del artículo...</p>
+            <footer>
+                <p>Pie del artículo</p>
+            </footer>
+        </article>
+    </section>
+
+    <!-- Contenido multimedia -->
+    <h2>Multimedia</h2>
+    <video>
+        Tu navegador no soporta el elemento video.
+    </video>
+
+    <!-- Formulario -->
+    <h2>Formulario</h2>
+    <form>
+        <label>Telefono</label>
+        <input >
+        <br>
+        <label >Correo electrónico:</label>
+        <input >
+        <br>
+        <button>Enviar</button>
+    </form>
+
+    <!-- Comentario -->
+    <!-- Este es un comentario en HTML -->
+</body>
+</html>
