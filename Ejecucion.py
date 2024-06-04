@@ -76,8 +76,7 @@ def lectura_c():
 def centrar_elemento(elemento, ancho_columna):
     elemento_str = str(elemento)
     espacios_izquierda = (ancho_columna - len(elemento_str)) // 2
-    espacio = " " * espacios_izquierda + elemento_str
-    return " " * espacios_izquierda + elemento_str
+    return " " * espacios_izquierda + elemento_str 
 
 def analizadorS():
     #Ancho del text area para mostrar el arbol sintactico
@@ -114,7 +113,7 @@ def analizadorS():
             for elemento in fila:
                 elemento_centrado = centrar_elemento(elemento, ancho_columna)
                 TextArea2.insert(END, elemento_centrado)
-            TextArea2.insert(END, "\n")
+            TextArea2.insert(END, "\n\n")
     
     else:
         TextArea2.insert(END, "Análisis Sintáctico Fallido.\n")

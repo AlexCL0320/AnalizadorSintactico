@@ -17,15 +17,11 @@ class AS_HTML:
 
         #Comenzamos a analizar los tokens pasados por el analizador lexico
         def programa(self):
-            print("<programa>")
-            self.elemetosA.append(["<programa>"]) #Cargamos el no terminal a la lista
+            self.elemetosA.append(["PROGRAMA"]) #Cargamos el no terminal a la lista
             #Validamos la declaracion del inicio del programa
             if self.tipo():
-                
-                print("<tipo>              <bloque>")
-                print(self.tokenG[2])
-                self.elemetosA.append(["<tipo>" , "<bloque>"]) #Cargamos el no terminal a la lista    
-                self.elemetosA.append([self.tokenG[2]]) #Cargamos el no terminal a la lista
+                self.elemetosA.append(["TIPO" , "BLOQUE"]) #Cargamos el no terminal a la lista    
+                self.elemetosA.append([self.tokenG[2]]) #Cargamos el terminal a la lista
                 if self.bloque():
                     return True
             return self.elemetosA
@@ -37,16 +33,12 @@ class AS_HTML:
 
 
         def bloque(self):
-            #print("                 <contenedor_abierto>    <encabezado>    <cuerpo>    <contenedor_cerrado>")
-            self.elemetosA.append(["<contenedor_abierto>", "<encabezado>" , "<cuerpo>", "<contenedor_cerrado>"]) #Cargamos el no terminal a la lista    
-
+            self.elemetosA.append(["CONTENEDOR_ABIERTO", "ENCABEZADO" , "CUERPO", "CONTENEDOR_CERRADO"]) #Cargamos el no terminal a la lista    
             if self.contenedor_abierto():
-                print("                 "+self.tokenG[2])
+                self.elemetosA.append([self.tokenG[2]]) #Cargamos el no terminal a la lista
                 if self.encabezado():
-                    print(self.tokenG[2])
                     if self.cuerpo():
                         if self.contenedor_cerrado():
-                            print(self.tokenG[2])
                             return True
             return False
 
@@ -61,11 +53,13 @@ class AS_HTML:
             return token and token[0] == "Etiqueta de Cierre" and token[2].strip().lower() == "</html>"
 
         def encabezado(self):
+            self.elemetosA.append(["ENCABEZADOA"]) #Cargamos el no terminal a la lista
             if self.encabezadoA():
-                print(self.tokenG[2])
+                self.elemetosA.append([self.tokenG[2]]) #Cargamos el no terminal a la lista
                 while self.metadatos():                    
                     pass
                 if self.encabezadoC():
+                    self.elemetosA.append([self.tokenG[2]]) #Cargamos el no terminal a la lista
                     return True
             return False
 
@@ -79,12 +73,13 @@ class AS_HTML:
             return token and token[0] == "Etiqueta de Cierre" and token[2].strip().lower() == "</head>"
 
         def metadatos(self):
+            self.elemetosA.append(["METADATOS"]) #Cargamos el no terminal a la lista
             if self.titulo():
                 return True
 
         def titulo(self):
             if self.tituloA():
-                print(self.tokenG[2])
+                self.elemetosA.append([self.tokenG[2]]) #Cargamos el no terminal a la lista
                 while self.relleno():
                     pass
                 if self.tituloC():
