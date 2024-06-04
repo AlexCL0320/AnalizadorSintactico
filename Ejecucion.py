@@ -79,7 +79,7 @@ def centrar_elemento(elemento, ancho_columna):
     return " " * espacios_izquierda + elemento_str 
 
 def analizadorS():
-    #Ancho del text area para mostrar el arbol sintactico
+    #Ancho del text ayea para mostrar el arbol sintactico
     ancho_columna = 396
     #Obtenemos la cadena de texto ingresada
     cadena = TextArea.get("1.0", END)
@@ -92,6 +92,7 @@ def analizadorS():
     AS = AS_HTML(tokens)
     res = AS.programa()
     elementosA = AS.arbol()
+    detalles = AS.erroresR()
     # Crear una ventana para mostrar el resultado del análisis sintáctico
     lectura3 = Toplevel(lectura)
     posicion_x_lectura3 = lectura.winfo_x()
@@ -105,29 +106,33 @@ def analizadorS():
     TextArea2 = scrolledtext.ScrolledText(lectura3, font=("nunito", 10), width=198, height=39)
     TextArea2.pack()
     
-    # Insertar las filas centradas en el TextArea
-    if elementosA:
-        for fila in elementosA:
-            numero_columnas = len(fila) #Obtenemos el numero de columnas
-            ancho_columna = ancho_columna // numero_columnas #Obtenemos la division en entero
-            for elemento in fila:
-                elemento_centrado = centrar_elemento(elemento, ancho_columna)
-                if elemento.isupper():
-                    TextArea2.insert(END, elemento_centrado, "mayusculas")
-                else:
-                    TextArea2.insert(END, elemento_centrado)
-            TextArea2.insert(END, "\n\n")
+    if res:
+        if elementosA:
+            for fila in elementosA:
+                num_columnas = len(fila)
+                for i, elemento in enumerate(fila):
+                    # Añadimos un margen de separación con una tabulación
+                    if elemento.isupper():
+                        TextArea2.insert(END, elemento, "mayusculas")
+                    else:
+                        TextArea2.insert(END, elemento)
+                    # Separa si hay mas de un terminal
+                    if num_columnas > 1 and i < num_columnas - 1:
+                        TextArea2.insert(END, "   |   ")
+                    else:
+                        TextArea2.insert(END, "\n")
+                        
     
     else:
         TextArea2.insert(END, "Análisis Sintáctico Fallido.\n")
  
     # Configuramos el color para las mayúsculas
-    TextArea2.tag_config("mayusculas", foreground="#6F9292" , font=("nunito", 10, "bold"))
-    errores(res)
+    TextArea2.tag_config("mayusculas", foreground="#709393" , font=("nunito", 10, "bold"))
+    errores(detalles)
     lectura3.mainloop()
 
 
-def errores(res):
+def errores(detalles):
     # Crear una ventana para mostrar el resultado del análisis sintáctico
     lectura4 = Toplevel(lectura)
     posicion_x_lectura3 = lectura.winfo_x()
@@ -141,9 +146,14 @@ def errores(res):
     TextArea3 = scrolledtext.ScrolledText(lectura4, font=("nunito", 10), width=42, height=33)
     TextArea3.pack(pady=(0, 50))  # Añadir un poco menos de espacio vertical
         
-    if res:
-        TextArea3.insert(END, "Análisis Sintáctico Exitoso.\n")
-    else:
-        TextArea3.insert(END, "Análisis Sintáctico Fallido.\n")
+    if detalles:
+        for fila in detalles:
+            num_columnas = len(fila)
+            for i, elemento in enumerate(fila):
+                    TextArea3.insert(END, elemento)
+            TextArea3.insert(END, "\n\n")
+                
+  
+        
 if __name__ == "__main__":
     main()

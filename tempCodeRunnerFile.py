@@ -1,149 +1,177 @@
-from tkinter import *
-from tkinter import ttk
-from tkinter import scrolledtext
-from AL_HTML import AL_HTML
-from AS_HTML import AS_HTML
+#Importamos la libreria de expresiones regulares 
+import re
 
-# Crea una ventana principal
-lectura = Tk()
-# Inicializa TextArea aquí para que sea accesible globalmente
-TextArea = scrolledtext.ScrolledText(lectura, font=("nunito", 9), width=90, height=38)
-
-# Obtiene el ancho y el largo de la pantalla analizador lexico
-ancho_pantalla = (lectura.winfo_screenwidth() / 2) - 50
-largo_pantalla = lectura.winfo_screenheight() - 150
-
-# Obtiene el ancho y el largo de la pantalla analizador sintactico
-ancho_pantalla2 = lectura.winfo_screenwidth() - 50
-largo_pantalla2 = lectura.winfo_screenheight() - 150
-
-# Espaciado
-espacio = None
-
-def main():
-    lectura_c()
-
-def mostrarMensaje(componentes):
-    # Crea una ventana secundaria
-    lectura2 = Toplevel(lectura)
-    # Calcula la posición x de la ventana secundaria para que aparezca a la derecha de la ventana principal
-    posicion_x_lectura2 = lectura.winfo_x() + lectura.winfo_width() + 10
-    # Configura la geometría de la ventana secundaria
-    lectura2.geometry('{}x{}+{}+{}'.format(int(ancho_pantalla), int(largo_pantalla), posicion_x_lectura2, lectura.winfo_y()))
-    lectura2.title("Analizador Léxico")
-    etiqueta = Label(lectura2, text="SALIDA DE TOKENS - HTML")
-    etiqueta.pack(pady=(25, 15))
-
-    # Crear el estilo de la tabla
-    style = ttk.Style()
-    # Configurar el color de fondo y de texto del encabezado
-    style.configure("Treeview.Heading", background="#F2F2F2", foreground="black")
-    # Configurar el color de fondo y de texto de las filas
-    style.configure("Treeview", background="#14283B", foreground="white")
-
-    # Crear la tabla para mostrar los tokens
-    tree = ttk.Treeview(lectura2, columns=("Columna 1", "Columna 2", "Columna 3"), show="headings", style="Treeview")
-    tree.heading("Columna 1", text="Tipo")
-    tree.heading("Columna 2", text="Descripcion")
-    tree.heading("Columna 3", text="Valor")
-    tree.pack(fill="both", expand=True, padx=15, pady=(15, 0))
-
-    # Insertar datos en la tabla
-    data = []
-    for tipo, descripcion, valor in componentes:
-        data.append([tipo, descripcion, valor])
-
-    for row in data:
-        tree.insert("", "end", values=row)
-
-def obtener_cadena():
-    analizadorS()
-
-def lectura_c():
-    lectura.geometry('{}x{}+{}+{}'.format(int(ancho_pantalla), int(largo_pantalla), 25, 20))
-    lectura.title("Lectura Código")
-    etiqueta = Label(lectura, text="INGRESA CADENA EN LENGUAJE HTML")
-    etiqueta.pack(pady=(25, 15))
-    # Configuramos un scroll para el text area
-    TextArea.pack()
-    # Agregamos un boton de validacion
-    boton = Button(lectura, text=" Validar", bg='#253745', fg='white', command=obtener_cadena)
-    boton.pack(pady=(15, 0))
-    # Ciclamos la interfaz grafica
-    lectura.mainloop()
-
-# Función para centrar un elemento en un ancho específico
-def centrar_elemento(elemento, ancho_columna):
-    elemento_str = str(elemento)
-    espacios_izquierda = (ancho_columna - len(elemento_str)) // 2
-    return " " * espacios_izquierda + elemento_str 
-
-def analizadorS():
-    #Ancho del text area para mostrar el arbol sintactico
-    ancho_columna = 396
-    #Obtenemos la cadena de texto ingresada
-    cadena = TextArea.get("1.0", END)
-    # Pasamos la cadena de texto leida al analizador lexico
-    AL = AL_HTML(cadena)
-    # Obtenemos los componentes lexicos devueltos por el analizador lexico
-    tokens = AL.A_Lex()
-    mostrarMensaje(tokens)
+class AL_HTML:
+    cadena = None
+    # Lista de tokens
+    tokens_html = {
+        "!DOCTYPE": "Declaracion de tipo documento",
+        "a": "Enlace a pagina de internet",
+        "p": "Parrafo",
+        "h1": "Titulo 1",
+        "h2": "Titulo 2",
+        "h3": "Titulo 3",
+        "h4": "Titulo 4",
+        "h5": "Titulo 5",
+        "h6": "Titulo 6",
+        "strong": "Enfasis texto",
+        "em": "Enfasis cursiva",
+        "abbr": "Abreviatura",
+        "address": "Direccion de contacto",
+        "cite": "Titulos de libros o trabajos web",
+        "q": "Cita online",
+        "code": "Seccion de codigo",
+        "del": "Texto borrado del documento",
+        "div": "Seccion de contenido", 
+        "br": "Salto de linea",
+        "img": "Imagen",
+        "ul": "lista no ordenada",
+        "ol": "lista ordenada",
+        "html": "Raiz del documento HTML",
+        "head": "Informacion general sobre el documento",
+        "title": "Titulo del documento",
+        "body": "Contenido principal",
+        "li": "Elemento de una lista",
+        "table": "Tabla",
+        "tr": "Fila de tabla",
+        "td": "Columna de tabla",
+        "form": "Formulario",
+        "input": "Entrada por teclado",
+        "textarea": "Area de texto",
+        "select": "Menu desplegable-formulario",
+        "option": "Opcion  de menu",
+        "span": "Grupo de elementos en linea",
+        "hr": "Linea horizontal",
+        "b": "Texto en negritas",
+        "i": "Texto en cursiva",
+        "u": "Texto subrayado",
+        "s": "Texto tachado",
+        "em": "Enfasis de texto",
+        "font": "Tamaño y estilo de fuente",
+        "basefont": "Tamaño base de la fuente",
+        "center": "Centrado de contenido",
+        "blockquote": "Cita en bloque",
+        "pre": "Texto preformateado",
+        "meta": "Metadatos",
+        "link": "Enlace a una hoja de estilo",
+        "base": "URL base para todos los enlaces",
+        "embed": "Contenido incrustado",
+        "iframe": "Macro de pagina incrustado",
+        "var": "Variable",
+        "sub": "Subíndice",
+        "sup": "Superíndice",
+        "kbd": "Marca entrada por teclado",
+        "big": "Texto en grande",
+        "small": "Texto en pequeño",
+        "frameset": "Conjunto de macros",
+        "frame": "Macro",
+        "dir": "Directorio",
+        "applet": "Applet",
+        "style": "Seccion de estilos",
+        "section": "Seccion de contenido ",   
+        "footer": "Pie de pagina", 
+        "article": "Articulo", 
+        "video": "Contenido multimedia de video",
+        "label": "Etiqueta de texto",
+        "button": "Boton"
+    }
     
-    AS = AS_HTML(tokens)
-    elementosA = AS.programa()
-    
-    # Crear una ventana para mostrar el resultado del análisis sintáctico
-    lectura3 = Toplevel(lectura)
-    posicion_x_lectura3 = lectura.winfo_x()
-    lectura3.geometry('{}x{}+{}+{}'.format(int(ancho_pantalla2), int(largo_pantalla2), posicion_x_lectura3, lectura.winfo_y()))
-    lectura3.title("Analizador Sintactico")
-    lectura3.configure(bg='#253745')
+    def __init__(self, cadena):
+        self.cadena = cadena
 
-    etiqueta = Label(lectura3, text="ARBOL SINTÁCTICO - HTML", bg='#253745', fg='white')
-    etiqueta.pack(pady=(25, 15))
-
-    TextArea2 = scrolledtext.ScrolledText(lectura3, font=("nunito", 10), width=198, height=39)
-    TextArea2.pack()
+    def A_Lex(self):
+        componentes_lex = self.obtener_tokens()
+        return componentes_lex
+           
+    def tipo_etiqueta(self, t_e):
+        #print("Estamos validando la etiqueta:", t_e)
+        v_etiqueta = r"</?([a-zA-Z][a-zA-Z0-9]*)\s*[^>]*>"
+        validacion = re.match(v_etiqueta, t_e)
+        if validacion:
+            tipo_etiqueta = validacion.group(1).lower()
+            tipo_etiqueta = self.tokens_html.get(tipo_etiqueta, "No reconocido")
+            return tipo_etiqueta
+        else:
+            print("Etiqueta No Valida Para HTML 3.2", "\n")
+      
+    def extraer_atributos(self, t_e):
+        atributos = {}
+        v_atributos = r'([a-zA-Z_:][a-zA-Z0-9_.:-]*)\s*=\s*"([^"]*)"'
+        matches = re.findall(v_atributos, t_e)
+        for match in matches:
+            atributos[match[0]] = match[1]
+        return atributos
     
-    # Insertar las filas centradas en el TextArea
-    if elementosA:
-        for fila in elementosA:
-            numero_columnas = len(fila) #Obtenemos el numero de columnas
-            ancho_columna = ancho_columna // numero_columnas #Obtenemos la division en entero
-            for elemento in fila:
-                elemento_centrado = centrar_elemento(elemento, ancho_columna)
-                if elemento.isupper():
-                    TextArea2.insert(END, elemento_centrado, "mayusculas")
+    def obtener_tokens(self):
+        tokens = []
+        scan = ""
+        estado = "comenzar"
+        i = 0
+        while i < len(self.cadena):
+            caracter = self.cadena[i]
+            if estado == "comenzar":
+                if caracter.isspace():
+                    estado = "espacio"
+                elif caracter == "<":
+                    if self.cadena[i:i+4] == "<!--":
+                        fin_comentario = self.cadena.find("-->", i+4)
+                        if fin_comentario != -1:
+                            tokens.append(["Comentario", "Comentario HTML", self.cadena[i:fin_comentario+3]])
+                            i = fin_comentario + 3
+                            estado = "comenzar"
+                            continue
+                    elif self.cadena[i: i+9].lower() == "<!doctype":
+                        estado = "tipo documento"
+                        fin_tipo_documento = self.cadena.find(">", i+14)
+                        if fin_tipo_documento != -1:
+                            tokens.append(["Tipo Documento", "Declaracion del Tipo de Documento", self.cadena[i:fin_tipo_documento+1]])
+                            i = fin_tipo_documento + 1
+                            estado = "comenzar"
+                            continue
+                    scan += caracter
+                    estado = "etiquetas"
                 else:
-                    TextArea2.insert(END, elemento_centrado)
-            TextArea2.insert(END, "\n\n")
-    
-    else:
-        TextArea2.insert(END, "Análisis Sintáctico Fallido.\n")
- 
-    # Configuramos el color para las mayúsculas
-    TextArea2.tag_config("mayusculas", foreground="#6F9292" , font=("nunito", 10, "bold"))
-    errores(elementosA)
-    lectura3.mainloop()
+                    estado = "texto plano"
+                    scan += caracter
+            elif estado == "espacio":
+                if not caracter.isspace():
+                    estado = "comenzar"
+                    continue
+            elif estado == "etiquetas":
+                if caracter == ">":
+                    scan += caracter
+                    if scan.startswith("</"):
+                        tipo_etiqueta = scan
+                        etiqueta = self.tipo_etiqueta(tipo_etiqueta)
+                        tokens.append(["Etiqueta de Cierre", etiqueta, scan])
+                    else:
+                        tipo_etiqueta = scan
+                        etiqueta = self.tipo_etiqueta(tipo_etiqueta)
+                        atributos = self.extraer_atributos(scan)
+                        tokens.append(["Etiqueta de Apertura", etiqueta, scan])
+                        if atributos:
+                            for attr, val in atributos.items():
+                                tokens.append(["Atributo", attr, val])
+                    scan = ""
+                    estado = "comenzar"
+                else:
+                    scan += caracter
+            elif estado == "texto plano":
+                if caracter == "<":
+                    tokens.append(["Texto", "Texto plano", scan])
+                    scan = ""
+                    estado = "etiquetas"
+                    continue
+                else:
+                    scan += caracter
+            i += 1
+        if scan:
+            tokens.append(["Texto", "Texto plano", scan])
+        return tokens
+                
+    def valida_atributos(self):
+        pass
+      
+    def valida_aperturas_cierres(self):
+        pass
 
-
-def errores(res):
-    # Crear una ventana para mostrar el resultado del análisis sintáctico
-    lectura4 = Toplevel(lectura)
-    posicion_x_lectura3 = lectura.winfo_x()
-    lectura4.geometry('{}x{}+{}+{}'.format(int(ancho_pantalla2/4), int(500), posicion_x_lectura3, lectura.winfo_y()))
-    lectura4.title("Analizador Sintactico")
-    lectura4.configure(bg='#870C1B')
-
-    etiqueta = Label(lectura4, text="DETALLES - ANÁLISIS", bg='#870C1B', fg='white')
-    etiqueta.pack(pady=(25, 15))
-
-    TextArea3 = scrolledtext.ScrolledText(lectura4, font=("nunito", 10), width=42, height=33)
-    TextArea3.pack(pady=(0, 50))  # Añadir un poco menos de espacio vertical
-        
-    if res:
-        TextArea3.insert(END, "Análisis Sintáctico Exitoso.\n")
-    else:
-        TextArea3.insert(END, "Análisis Sintáctico Fallido.\n")
-if __name__ == "__main__":
-    main()
