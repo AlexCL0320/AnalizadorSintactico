@@ -138,8 +138,8 @@ def errores():
     etiqueta = Label(lectura4, text="ERRORES - HTML", bg='#870C1B', fg='white')
     etiqueta.pack(pady=(25, 15))
 
-    TextArea3 = scrolledtext.ScrolledText(lectura4, font=("nunito", 10), width=38, height=43)
-    TextArea3.pack()
+    TextArea3 = scrolledtext.ScrolledText(lectura4, font=("nunito", 10), width=38, height=33)
+    TextArea3.pack(pady=(0, 50))  # Añadir un poco menos de espacio vertical
     
 if __name__ == "__main__":
     main()
