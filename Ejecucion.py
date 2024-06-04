@@ -90,8 +90,8 @@ def analizadorS():
     mostrarMensaje(tokens)
     
     AS = AS_HTML(tokens)
-    elementosA = AS.programa()
-    
+    res = AS.programa()
+    elementosA = AS.arbol()
     # Crear una ventana para mostrar el resultado del análisis sintáctico
     lectura3 = Toplevel(lectura)
     posicion_x_lectura3 = lectura.winfo_x()
@@ -123,11 +123,11 @@ def analizadorS():
  
     # Configuramos el color para las mayúsculas
     TextArea2.tag_config("mayusculas", foreground="#6F9292" , font=("nunito", 10, "bold"))
-    errores()
+    errores(res)
     lectura3.mainloop()
 
 
-def errores():
+def errores(res):
     # Crear una ventana para mostrar el resultado del análisis sintáctico
     lectura4 = Toplevel(lectura)
     posicion_x_lectura3 = lectura.winfo_x()
@@ -135,11 +135,15 @@ def errores():
     lectura4.title("Analizador Sintactico")
     lectura4.configure(bg='#870C1B')
 
-    etiqueta = Label(lectura4, text="ERRORES - HTML", bg='#870C1B', fg='white')
+    etiqueta = Label(lectura4, text="DETALLES - ANÁLISIS", bg='#870C1B', fg='white')
     etiqueta.pack(pady=(25, 15))
 
-    TextArea3 = scrolledtext.ScrolledText(lectura4, font=("nunito", 10), width=38, height=33)
+    TextArea3 = scrolledtext.ScrolledText(lectura4, font=("nunito", 10), width=42, height=33)
     TextArea3.pack(pady=(0, 50))  # Añadir un poco menos de espacio vertical
-    
+        
+    if res:
+        TextArea3.insert(END, "Análisis Sintáctico Exitoso.\n")
+    else:
+        TextArea3.insert(END, "Análisis Sintáctico Fallido.\n")
 if __name__ == "__main__":
     main()
