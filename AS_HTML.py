@@ -53,12 +53,13 @@ class AS_HTML:
             return token and token[0] == "Etiqueta de Cierre" and token[2].strip().lower() == "</html>"
 
         def encabezado(self):
-            self.elemetosA.append(["ENCABEZADOA"]) #Cargamos el no terminal a la lista
+            self.elemetosA.append(["ENCABEZADO_A"]) #Cargamos el no terminal a la lista
             if self.encabezadoA():
                 self.elemetosA.append([self.tokenG[2]]) #Cargamos el no terminal a la lista
                 while self.metadatos():                    
                     pass
                 if self.encabezadoC():
+                    self.elemetosA.append(["ENCABEZADO_A"]) #Cargamos el no terminal a la lista
                     self.elemetosA.append([self.tokenG[2]]) #Cargamos el no terminal a la lista
                     return True
             return False
@@ -70,6 +71,7 @@ class AS_HTML:
 
         def encabezadoC(self):
             token = self.obtener_token()
+            self.tokenG =  token
             return token and token[0] == "Etiqueta de Cierre" and token[2].strip().lower() == "</head>"
 
         def metadatos(self):
@@ -79,10 +81,11 @@ class AS_HTML:
 
         def titulo(self):
             if self.tituloA():
+                self.elemetosA.append(["TITULO_A"]) #Cargamos el no terminal a la lista
                 self.elemetosA.append([self.tokenG[2]]) #Cargamos el no terminal a la lista
-                while self.relleno():
-                    pass
                 if self.tituloC():
+                    self.elemetosA.append(["TITULO_C"]) #Cargamos el no terminal a la lista
+                    self.elemetosA.append([self.tokenG[2]]) #Cargamos el no terminal a la lista
                     return True
             return False
 
@@ -93,6 +96,7 @@ class AS_HTML:
 
         def tituloC(self):
             token = self.obtener_token()
+            self.tokenG = token
             return token and token[0] == "Etiqueta de Cierre" and token[2].strip().lower() == "</title>"
 
         def metaetiqueta(self):

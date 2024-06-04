@@ -112,13 +112,34 @@ def analizadorS():
             ancho_columna = ancho_columna // numero_columnas #Obtenemos la division en entero
             for elemento in fila:
                 elemento_centrado = centrar_elemento(elemento, ancho_columna)
-                TextArea2.insert(END, elemento_centrado)
+                if elemento.isupper():
+                    TextArea2.insert(END, elemento_centrado, "mayusculas")
+                else:
+                    TextArea2.insert(END, elemento_centrado)
             TextArea2.insert(END, "\n\n")
     
     else:
         TextArea2.insert(END, "Análisis Sintáctico Fallido.\n")
-
+ 
+    # Configuramos el color para las mayúsculas
+    TextArea2.tag_config("mayusculas", foreground="#6F9292" , font=("nunito", 10, "bold"))
+    errores()
     lectura3.mainloop()
 
+
+def errores():
+    # Crear una ventana para mostrar el resultado del análisis sintáctico
+    lectura4 = Toplevel(lectura)
+    posicion_x_lectura3 = lectura.winfo_x()
+    lectura4.geometry('{}x{}+{}+{}'.format(int(ancho_pantalla2/4), int(500), posicion_x_lectura3, lectura.winfo_y()))
+    lectura4.title("Analizador Sintactico")
+    lectura4.configure(bg='#870C1B')
+
+    etiqueta = Label(lectura4, text="ERRORES - HTML", bg='#870C1B', fg='white')
+    etiqueta.pack(pady=(25, 15))
+
+    TextArea3 = scrolledtext.ScrolledText(lectura4, font=("nunito", 10), width=38, height=43)
+    TextArea3.pack()
+    
 if __name__ == "__main__":
     main()
