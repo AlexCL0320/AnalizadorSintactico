@@ -5,13 +5,15 @@ class AS_HTML:
         cA = 0  #Contador de etiquetas de apertura
         cC = 0  #Contador de etiquetas de cierre
         bS = 0 #Bandera para el resultado del analisis sintactico                
+        
         #Obtenemos la lista de tokens 
         def __init__(self, tokens):
             self.tokens = tokens
             self.index = 0 #iniciamos el indice en 1
             self.elemetosA = [] #Lista para almacenar la construccion de mi arbol
-        
-        #Obetemos uno a uno los valores de los tokens de acuerdo a sus posiciones
+            self.errores = [] #Lista de correcciones
+            
+        #Obetenemos uno a uno los valores de los tokens de acuerdo a sus posiciones
         def obtener_token(self):
             if self.index < len(self.tokens):
                 token = self.tokens[self.index]
@@ -31,6 +33,8 @@ class AS_HTML:
                 if self.bloque():
                     self.bS = True
                     return True
+            else:
+                self.errores.append(["REVISAR ETIQUETA TIPO DOCUMENTO: " , self.tokenG[2]])
             return False
 
         def tipo(self):
@@ -56,6 +60,11 @@ class AS_HTML:
                             self.elemetosA.append(["\nCONTENEDOR_CERRADO"]) #Cargamos el no terminal a la lista
                             self.elemetosA.append([self.tokenG[2]]) #Cargamos el no terminal a la lista
                             return True
+                        else:
+                           self.errores.append(["REVISAR CONTENEDOR CIERRE: " , self.tokenG[2]])
+            
+            else:
+                self.errores.append(["REVISAR CONTENEDOR APERTURA: ", self.tokenG[2]])
             return False
 
         def contenedor_abierto(self):
@@ -80,6 +89,10 @@ class AS_HTML:
                     self.elemetosA.append(["\nENCABEZADO_C"]) #Cargamos el no terminal a la lista
                     self.elemetosA.append([self.tokenG[2]]) #Cargamos el no terminal a la lista
                     return True
+                else:
+                    self.errores.append(["REVISAR ENCABEZADO CIERRE: " , self.tokenG[2]])
+            else:
+                self.errores.append(["REVISAR ENCABEZADO APERTURA: " , self.tokenG[2]])
             return False
 
         def encabezadoA(self):
@@ -90,7 +103,7 @@ class AS_HTML:
         def encabezadoC(self):
             token = self.obtener_token()
             self.tokenG =  token
-            print("Sali: "+ token[1])
+            #print("Sali: "+ token[1])
             return token and token[0] == "Etiqueta de Cierre" and token[2].strip().lower() == "</head>"
 
         def metadatos(self):
@@ -100,6 +113,7 @@ class AS_HTML:
                 return True
             elif self.enlace():
                 return True
+            
             self.index -=1
             return False   
          
@@ -123,27 +137,35 @@ class AS_HTML:
                         self.cC += 1
                         self.elemetosA.append(["\nTITULO_C"]) #Cargamos el no terminal a la lista
                         self.elemetosA.append([self.tokenG[2]]) #Cargamos el no terminal a la lista
-                        return True
+                        return True                    
             return False
 
         def tituloA(self):
             token = self.obtener_token()
             self.tokenG = token
+            if((token[0] == "Etiqueta de Apertura" and token[2].strip().lower().startswith("<title"))==False):
+                self.errores.append(["REVISAR TITULO APERTURA: " , self.tokenG[2]])
             return token and token[0] == "Etiqueta de Apertura" and token[2].strip().lower().startswith("<title")
 
         def tituloC(self):
             token = self.obtener_token()
             self.tokenG = token
+            if((token[0] == "Etiqueta de Cierre" and token[2].strip().lower() == "</title>")==False):
+                self.errores.append(["REVISAR TITULO APERTURA: " , self.tokenG[2]])
             return token and token[0] == "Etiqueta de Cierre" and token[2].strip().lower() == "</title>"
 
         def metaetiqueta(self):
             self.index -= 1 
             token = self.obtener_token()
+            if((token[0] == "Etiqueta de Apertura" and token[2].strip().lower().startswith("<meta"))==False):
+                self.errores.append(["REVISAR METAETIQUETA: " , self.tokenG[2]])
             return token and token[0] == "Etiqueta de Apertura" and token[2].strip().lower().startswith("<meta")
 
         def enlace(self):
             self.index -= 1 
             token = self.obtener_token()
+            if((token[0] == "Etiqueta de Apertura" and token[2].strip().lower().startswith("<link"))==False):
+                self.errores.append(["REVISAR ENLACE: " , self.tokenG[2]])
             return token and token[0] == "Etiqueta de Apertura" and token[2].strip().lower().startswith("<link")
 
         def cuerpo(self):
@@ -159,6 +181,10 @@ class AS_HTML:
                         self.elemetosA.append(["\nCUERPO_C"]) #Cargamos el no terminal a la lista
                         self.elemetosA.append([self.tokenG[2]]) #Cargamos el no terminal a la lista
                         return True
+                    else:
+                        self.errores.append(["REVISAR CUERPO CIERRE: " , self.tokenG[2]])
+            else:
+                self.errores.append(["REVISAR CUERPO APERTURA: " , self.tokenG[2]])
             return False
 
         def cuerpoA(self):
@@ -201,7 +227,10 @@ class AS_HTML:
                 self.tokenG = token
                 self.cU += 1
                 self.elemetosA.append([self.tokenG[2]]) #Cargamos el no terminal a la lista
+            else:
+                self.errores.append(["REVISAR ETIQUETA: " , self.tokenG[2]])
             return token and token[0] == "Etiqueta de Apertura" and (token[2].strip().lower().startswith("<br") or token[2].strip().lower().startswith("<img") or token[2].strip().lower().startswith("<input"))
+        
 
         def etiquetaA(self):
             self.index -=1
@@ -215,6 +244,8 @@ class AS_HTML:
                 self.tokenG = token
                 self.cA += 1
                 self.elemetosA.append([self.tokenG[2]]) #Cargamos el no terminal a la lista
+            else:
+                self.errores.append(["REVISAR ETIQUETA APERTURA: " , self.tokenG[2]])
             #print("ELemento p: "+self.tokenG[2])
             return token and token[0] == "Etiqueta de Apertura" and (token[2].strip().lower().startswith("<h1") or token[2].strip().lower().startswith("<a") or token[2].strip().lower().startswith("<h2") or token[2].strip().lower().startswith("<label") or token[2].strip().lower().startswith("<form") or token[2].strip().lower().startswith("<button") or token[2].strip().lower().startswith("<p") or token[2].strip().lower().startswith("<ol") or token[2].strip().lower().startswith("<li") or token[2].strip().lower().startswith("<div"))
 
@@ -228,6 +259,8 @@ class AS_HTML:
                 self.tokenG = token
                 self.cC +=1
                 self.elemetosA.append([self.tokenG[2]]) #Cargamos el no terminal a la lista
+            else:
+                self.errores.append(["REVISAR ETIQUETA CIERRE: " , self.tokenG[2]])
             return token and token[0] == "Etiqueta de Cierre" and (token[2].strip().lower() == "</h1>" or token[2].strip().lower().startswith("</a>")  or token[2].strip().lower() == "</h2>" or token[2].strip().lower() == "</label>" or token[2].strip().lower() == "</form>" or token[2].strip().lower() == "</div>" or token[2].strip().lower() == "</button>" or token[2].strip().lower() == "</p>" or token[2].strip().lower() == "</ol>" or token[2].strip().lower() == "</li>")
 
         def relleno(self):
@@ -244,19 +277,23 @@ class AS_HTML:
                 self.elemetosA.append(["TEXTO"]) #Cargamos el no terminal a la lista
                 self.tokenG = token
                 self.elemetosA.append([self.tokenG[2]]) #Cargamos el no terminal a la lista
+            else:
+                self.errores.append(["REVISAR RELLENO: " , self.tokenG[2]])
             return token and (token[0] == "Texto")
         
         def erroresR(self):
             if(self.bS):
-                self.detalles.append(["Análisis Sintáctico Exitoso"])
+                self.errores.append(["ANALISIS SINTÁCTICO EXITOSO"])
             else:
-                self.detalles.append(["Análisis Sintáctico Fallido"])
-            self.detalles.append(["Etiquetas de unicas: ", self.cU])
-            self.detalles.append(["Etiquetas de apertura: ", self.cA])
-            self.detalles.append(["Etiquetas de ciere: ", self.cC])
+                self.errores.append(["ANÁLISIS SINTÁCTICO FALLIDO"])
+            
+            '''self.errores.append(["ETIQUETAS UNICAS: ", self.cU])
+            self.errores.append(["ETIQUETAS DE APERTURA: ", self.cA])
+            self.errores.append(["ETIQUETAS DE CIERRE: ", self.cC])'''
+            
             if(self.cA != self.cC):
-               self.detalles.append(["Error en apertura y cierre de etiquetas  !Verrificar!"])
-            return self.detalles
+               self.errores.append(["!VERIFICAR APERTURA Y CIERRE DE ETIQUETAS!"])
+            return self.errores
         
         
         def arbol(self):

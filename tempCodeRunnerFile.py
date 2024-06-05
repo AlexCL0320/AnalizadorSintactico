@@ -1,177 +1,300 @@
-#Importamos la libreria de expresiones regulares 
-import re
+class AS_HTML:
+        tokenG = None #Arreglo para guardar el valor del token analizado
+        detalles = [] #Lista de errores encontrados
+        cU = 0  #Contador de etiquetas unicas 
+        cA = 0  #Contador de etiquetas de apertura
+        cC = 0  #Contador de etiquetas de cierre
+        bS = 0 #Bandera para el resultado del analisis sintactico                
+        
+        #Obtenemos la lista de tokens 
+        def __init__(self, tokens):
+            self.tokens = tokens
+            self.index = 0 #iniciamos el indice en 1
+            self.elemetosA = [] #Lista para almacenar la construccion de mi arbol
+            self.errores = [] #Lista de correcciones
+            
+        #Obetenemos uno a uno los valores de los tokens de acuerdo a sus posiciones
+        def obtener_token(self):
+            if self.index < len(self.tokens):
+                token = self.tokens[self.index]
+                self.index += 1
+                return token
+            else:
+                return None
 
-class AL_HTML:
-    cadena = None
-    # Lista de tokens
-    tokens_html = {
-        "!DOCTYPE": "Declaracion de tipo documento",
-        "a": "Enlace a pagina de internet",
-        "p": "Parrafo",
-        "h1": "Titulo 1",
-        "h2": "Titulo 2",
-        "h3": "Titulo 3",
-        "h4": "Titulo 4",
-        "h5": "Titulo 5",
-        "h6": "Titulo 6",
-        "strong": "Enfasis texto",
-        "em": "Enfasis cursiva",
-        "abbr": "Abreviatura",
-        "address": "Direccion de contacto",
-        "cite": "Titulos de libros o trabajos web",
-        "q": "Cita online",
-        "code": "Seccion de codigo",
-        "del": "Texto borrado del documento",
-        "div": "Seccion de contenido", 
-        "br": "Salto de linea",
-        "img": "Imagen",
-        "ul": "lista no ordenada",
-        "ol": "lista ordenada",
-        "html": "Raiz del documento HTML",
-        "head": "Informacion general sobre el documento",
-        "title": "Titulo del documento",
-        "body": "Contenido principal",
-        "li": "Elemento de una lista",
-        "table": "Tabla",
-        "tr": "Fila de tabla",
-        "td": "Columna de tabla",
-        "form": "Formulario",
-        "input": "Entrada por teclado",
-        "textarea": "Area de texto",
-        "select": "Menu desplegable-formulario",
-        "option": "Opcion  de menu",
-        "span": "Grupo de elementos en linea",
-        "hr": "Linea horizontal",
-        "b": "Texto en negritas",
-        "i": "Texto en cursiva",
-        "u": "Texto subrayado",
-        "s": "Texto tachado",
-        "em": "Enfasis de texto",
-        "font": "Tamaño y estilo de fuente",
-        "basefont": "Tamaño base de la fuente",
-        "center": "Centrado de contenido",
-        "blockquote": "Cita en bloque",
-        "pre": "Texto preformateado",
-        "meta": "Metadatos",
-        "link": "Enlace a una hoja de estilo",
-        "base": "URL base para todos los enlaces",
-        "embed": "Contenido incrustado",
-        "iframe": "Macro de pagina incrustado",
-        "var": "Variable",
-        "sub": "Subíndice",
-        "sup": "Superíndice",
-        "kbd": "Marca entrada por teclado",
-        "big": "Texto en grande",
-        "small": "Texto en pequeño",
-        "frameset": "Conjunto de macros",
-        "frame": "Macro",
-        "dir": "Directorio",
-        "applet": "Applet",
-        "style": "Seccion de estilos",
-        "section": "Seccion de contenido ",   
-        "footer": "Pie de pagina", 
-        "article": "Articulo", 
-        "video": "Contenido multimedia de video",
-        "label": "Etiqueta de texto",
-        "button": "Boton"
-    }
-    
-    def __init__(self, cadena):
-        self.cadena = cadena
+        #Comenzamos a analizar los tokens pasados por el analizador lexico
+        def programa(self):
+            self.elemetosA.append(["PROGRAMA"]) #Cargamos el no terminal a la lista
+            #Validamos la declaracion del inicio del programa
+            self.elemetosA.append(["TIPO" , "BLOQUE"]) #Cargamos el no terminal a la lista    
+            if self.tipo():
+                self.elemetosA.append(["\nTIPO"]) #Cargamos el no terminal a la lista    
+                self.elemetosA.append([self.tokenG[2]]) #Cargamos el terminal a la lista
+                if self.bloque():
+                    self.bS = True
+                    return True
+            else:
+                self.errores.append(["REVISAR ETIQUETA TIPO DOCUMENTO: " , self.tokenG[2]])
+            return False
 
-    def A_Lex(self):
-        componentes_lex = self.obtener_tokens()
-        return componentes_lex
-           
-    def tipo_etiqueta(self, t_e):
-        #print("Estamos validando la etiqueta:", t_e)
-        v_etiqueta = r"</?([a-zA-Z][a-zA-Z0-9]*)\s*[^>]*>"
-        validacion = re.match(v_etiqueta, t_e)
-        if validacion:
-            tipo_etiqueta = validacion.group(1).lower()
-            tipo_etiqueta = self.tokens_html.get(tipo_etiqueta, "No reconocido")
-            return tipo_etiqueta
-        else:
-            print("Etiqueta No Valida Para HTML 3.2", "\n")
-      
-    def extraer_atributos(self, t_e):
-        atributos = {}
-        v_atributos = r'([a-zA-Z_:][a-zA-Z0-9_.:-]*)\s*=\s*"([^"]*)"'
-        matches = re.findall(v_atributos, t_e)
-        for match in matches:
-            atributos[match[0]] = match[1]
-        return atributos
-    
-    def obtener_tokens(self):
-        tokens = []
-        scan = ""
-        estado = "comenzar"
-        i = 0
-        while i < len(self.cadena):
-            caracter = self.cadena[i]
-            if estado == "comenzar":
-                if caracter.isspace():
-                    estado = "espacio"
-                elif caracter == "<":
-                    if self.cadena[i:i+4] == "<!--":
-                        fin_comentario = self.cadena.find("-->", i+4)
-                        if fin_comentario != -1:
-                            tokens.append(["Comentario", "Comentario HTML", self.cadena[i:fin_comentario+3]])
-                            i = fin_comentario + 3
-                            estado = "comenzar"
-                            continue
-                    elif self.cadena[i: i+9].lower() == "<!doctype":
-                        estado = "tipo documento"
-                        fin_tipo_documento = self.cadena.find(">", i+14)
-                        if fin_tipo_documento != -1:
-                            tokens.append(["Tipo Documento", "Declaracion del Tipo de Documento", self.cadena[i:fin_tipo_documento+1]])
-                            i = fin_tipo_documento + 1
-                            estado = "comenzar"
-                            continue
-                    scan += caracter
-                    estado = "etiquetas"
-                else:
-                    estado = "texto plano"
-                    scan += caracter
-            elif estado == "espacio":
-                if not caracter.isspace():
-                    estado = "comenzar"
-                    continue
-            elif estado == "etiquetas":
-                if caracter == ">":
-                    scan += caracter
-                    if scan.startswith("</"):
-                        tipo_etiqueta = scan
-                        etiqueta = self.tipo_etiqueta(tipo_etiqueta)
-                        tokens.append(["Etiqueta de Cierre", etiqueta, scan])
-                    else:
-                        tipo_etiqueta = scan
-                        etiqueta = self.tipo_etiqueta(tipo_etiqueta)
-                        atributos = self.extraer_atributos(scan)
-                        tokens.append(["Etiqueta de Apertura", etiqueta, scan])
-                        if atributos:
-                            for attr, val in atributos.items():
-                                tokens.append(["Atributo", attr, val])
-                    scan = ""
-                    estado = "comenzar"
-                else:
-                    scan += caracter
-            elif estado == "texto plano":
-                if caracter == "<":
-                    tokens.append(["Texto", "Texto plano", scan])
-                    scan = ""
-                    estado = "etiquetas"
-                    continue
-                else:
-                    scan += caracter
-            i += 1
-        if scan:
-            tokens.append(["Texto", "Texto plano", scan])
-        return tokens
+        def tipo(self):
+            token = self.obtener_token()
+            self.tokenG =token
+            return token and token[0] == "Tipo Documento" and token[2].strip().lower() == "<!doctype html>"
+
+
+        def bloque(self):
+            if self.contenedor_abierto():
+                self.cA += 1
+                self.elemetosA.append(["\nBLOQUE"]) #Cargamos el no terminal a la lista    
+                self.elemetosA.append(["CONTENEDOR_ABIERTO", "ENCABEZADO" , "CUERPO", "CONTENEDOR_CERRADO"]) #Cargamos el no terminal a la lista - Si se encuentra que el siguiente token es un contenedor de apertura
+                self.elemetosA.append(["\nCONTENEDOR_ABIERTO"]) #Cargamos el no terminal a la lista    
+                self.elemetosA.append([self.tokenG[2]]) #Cargamos el no terminal a la lista
                 
-    def valida_atributos(self):
-        pass
-      
-    def valida_aperturas_cierres(self):
-        pass
+                self.elemetosA.append(["\nENCABEZADO"]) #Cargamos el no terminal a la lista    
+                self.elemetosA.append(["ENCABEZADO_A", "METADATOS", "ENCABEZADO_C"]) #Cargamos el no terminal a la lista
+                if self.encabezado():
+                    if self.cuerpo():                
+                        if self.contenedor_cerrado():
+                            self.cC += 1
+                            self.elemetosA.append(["\nCONTENEDOR_CERRADO"]) #Cargamos el no terminal a la lista
+                            self.elemetosA.append([self.tokenG[2]]) #Cargamos el no terminal a la lista
+                            return True
+                        else:
+                           self.errores.append(["REVISAR CONTENEDOR CIERRE: " , self.tokenG[2]])
+            
+            else:
+                self.errores.append(["REVISAR CONTENEDOR APERTURA: ", self.tokenG[2]])
+            return False
 
+        def contenedor_abierto(self):
+            token = self.obtener_token()
+            self.tokenG = token
+            return token and token[0] == "Etiqueta de Apertura" and token[2].strip().lower().startswith("<html")
+
+        def contenedor_cerrado(self):
+            token = self.obtener_token()
+            self.tokenG = token
+            return token and token[0] == "Etiqueta de Cierre" and token[2].strip().lower() == "</html>"
+
+        def encabezado(self):
+            self.elemetosA.append(["\nENCABEZADO_A"]) #Cargamos el no terminal a la lista
+            if self.encabezadoA():
+                self.cA += 1
+                self.elemetosA.append([self.tokenG[2]]) #Cargamos el no terminal a la lista
+                while self.metadatos():                    
+                    pass
+                if self.encabezadoC():
+                    self.cC += 1
+                    self.elemetosA.append(["\nENCABEZADO_C"]) #Cargamos el no terminal a la lista
+                    self.elemetosA.append([self.tokenG[2]]) #Cargamos el no terminal a la lista
+                    return True
+                else:
+                    self.errores.append(["REVISAR ENCABEZADO CIERRE: " , self.tokenG[2]])
+            else:
+                self.errores.append(["REVISAR ENCABEZADO APERTURA: " , self.tokenG[2]])
+            return False
+
+        def encabezadoA(self):
+            token = self.obtener_token()
+            self.tokenG = token
+            return token and token[0] == "Etiqueta de Apertura" and token[2].strip().lower().startswith("<head")
+
+        def encabezadoC(self):
+            token = self.obtener_token()
+            self.tokenG =  token
+            #print("Sali: "+ token[1])
+            return token and token[0] == "Etiqueta de Cierre" and token[2].strip().lower() == "</head>"
+
+        def metadatos(self):
+            if self.titulo():
+                return True
+            elif self.metaetiqueta():
+                return True
+            elif self.enlace():
+                return True
+            
+            self.index -=1
+            return False   
+         
+        #Validamos el metadato  title en mi encabezadp
+        def titulo(self):            
+            if self.tituloA(): 
+                self.cA += 1
+                self.elemetosA.append(["\nMETADATOS"]) #Cargamos el no terminal a la lista
+                self.elemetosA.append(["TITULO"]) #Cargamos el no terminal a la lista
+                self.elemetosA.append(["\nTITULO"]) #Cargamos el no terminal a la lista
+                self.elemetosA.append(["TITULO_A", "RELLENO", "TITULO_C"]) #Cargamos el no terminal a la lista
+
+                
+                self.elemetosA.append(["\nTITULO_A"]) #Cargamos el no terminal a la lista
+                self.elemetosA.append([self.tokenG[2]]) #Cargamos el no terminal a la lista
+                if self.relleno():
+                    self.elemetosA.append(["\nRELLENO"]) #Cargamos el no terminal a la lista
+                    self.elemetosA.append(["TEXTO"]) #Cargamos el no terminal a la lista
+                    self.elemetosA.append([self.tokenG[2]]) #Cargamos el no terminal a la lista
+                    if self.tituloC():
+                        self.cC += 1
+                        self.elemetosA.append(["\nTITULO_C"]) #Cargamos el no terminal a la lista
+                        self.elemetosA.append([self.tokenG[2]]) #Cargamos el no terminal a la lista
+                        return True                    
+            return False
+
+        def tituloA(self):
+            token = self.obtener_token()
+            self.tokenG = token
+            if((token[0] == "Etiqueta de Apertura" and token[2].strip().lower().startswith("<title"))==False):
+                self.errores.append(["REVISAR TITULO APERTURA: " , self.tokenG[2]])
+            return token and token[0] == "Etiqueta de Apertura" and token[2].strip().lower().startswith("<title")
+
+        def tituloC(self):
+            token = self.obtener_token()
+            self.tokenG = token
+            if((token[0] == "Etiqueta de Cierre" and token[2].strip().lower() == "</title>")==False):
+                self.errores.append(["REVISAR TITULO APERTURA: " , self.tokenG[2]])
+            return token and token[0] == "Etiqueta de Cierre" and token[2].strip().lower() == "</title>"
+
+        def metaetiqueta(self):
+            self.index -= 1 
+            token = self.obtener_token()
+            if((token[0] == "Etiqueta de Apertura" and token[2].strip().lower().startswith("<meta"))==False):
+                self.errores.append(["REVISAR METAETIQUETA: " , self.tokenG[2]])
+            return token and token[0] == "Etiqueta de Apertura" and token[2].strip().lower().startswith("<meta")
+
+        def enlace(self):
+            self.index -= 1 
+            token = self.obtener_token()
+            if((token[0] == "Etiqueta de Apertura" and token[2].strip().lower().startswith("<link"))==False):
+                self.errores.append(["REVISAR ENLACE: " , self.tokenG[2]])
+            return token and token[0] == "Etiqueta de Apertura" and token[2].strip().lower().startswith("<link")
+
+        def cuerpo(self):
+            self.elemetosA.append(["\nCUERPO"]) #Cargamos el no terminal a la lista
+            self.elemetosA.append(["CUERPO_A", "CONTENIDO", "CUERPO_C"]) #Cargamos el no terminal a la lista
+
+            if self.cuerpoA():
+                self.cA += 1
+                self.elemetosA.append(["\nCUERPO_A"]) #Cargamos el no terminal a la lista
+                self.elemetosA.append([self.tokenG[2]]) #Cargamos el no terminal a la lista
+                if self.contenido():
+                    if self.cuerpoC():                        
+                        self.elemetosA.append(["\nCUERPO_C"]) #Cargamos el no terminal a la lista
+                        self.elemetosA.append([self.tokenG[2]]) #Cargamos el no terminal a la lista
+                        return True
+                    else:
+                        self.errores.append(["REVISAR CUERPO CIERRE: " , self.tokenG[2]])
+            else:
+                self.errores.append(["REVISAR CUERPO APERTURA: " , self.tokenG[2]])
+            return False
+
+        def cuerpoA(self):
+            token = self.obtener_token()
+            self.tokenG = token
+            return token and token[0] == "Etiqueta de Apertura" and token[2].strip().lower().startswith("<body")
+
+        def cuerpoC(self):
+            token = self.obtener_token()
+            self.tokenG = token
+            return token and token[0] == "Etiqueta de Cierre" and token[2].strip().lower() == "</body>"
+
+        def contenido(self):
+            self.elemetosA.append(["\nCONTENIDO"]) #Cargamos el no terminal a la lista
+            self.elemetosA.append(["ELEMENTO*\n"]) #Cargamos el no terminal a la lista
+            while self.elemento():
+                pass
+            return True
+
+        def elemento(self):
+            if self.etiquetaU():
+                return True
+            elif self.etiquetaA():
+                return True
+            elif self.relleno2():
+                return True
+            elif self.etiquetaC():
+                return True
+            self.index -=1
+            return False
+
+        def etiquetaU(self):
+            token = self.obtener_token()
+            if(token[0] == "Atributo"):
+                self.index +=1
+                token = self.obtener_token()
+            if((token[0] == "Etiqueta de Apertura" and (token[2].strip().lower().startswith("<br") or token[2].strip().lower().startswith("<img") or token[2].strip().lower().startswith("<input")))):
+                self.elemetosA.append(["\nELEMENTO"]) #Cargamos el no terminal a la lista
+                self.elemetosA.append(["ETIQUETA_U"]) #Cargamos el no terminal a la lista
+                self.tokenG = token
+                self.cU += 1
+                self.elemetosA.append([self.tokenG[2]]) #Cargamos el no terminal a la lista
+            else:
+                self.errores.append(["REVISAR ETIQUETA: " , self.tokenG[2]])
+            return token and token[0] == "Etiqueta de Apertura" and (token[2].strip().lower().startswith("<br") or token[2].strip().lower().startswith("<img") or token[2].strip().lower().startswith("<input"))
+        
+
+        def etiquetaA(self):
+            self.index -=1
+            token = self.obtener_token()
+            if(token[0] == "Atributo"):
+                self.index +=1
+                token = self.obtener_token()
+            if(token[0] == "Etiqueta de Apertura" and (token[2].strip().lower().startswith("<h1") or token[2].strip().lower().startswith("<a") or token[2].strip().lower().startswith("<h2") or token[2].strip().lower().startswith("<label") or token[2].strip().lower().startswith("<form") or token[2].strip().lower().startswith("<button") or token[2].strip().lower().startswith("<p") or token[2].strip().lower().startswith("<ol") or token[2].strip().lower().startswith("<li") or token[2].strip().lower().startswith("<div"))):
+                self.elemetosA.append(["\nELEMENTO"]) #Cargamos el no terminal a la lista
+                self.elemetosA.append(["ETIQUETA_A"]) #Cargamos el no terminal a la lista
+                self.tokenG = token
+                self.cA += 1
+                self.elemetosA.append([self.tokenG[2]]) #Cargamos el no terminal a la lista
+            else:
+                self.errores.append(["REVISAR ETIQUETA APERTURA: " , self.tokenG[2]])
+            #print("ELemento p: "+self.tokenG[2])
+            return token and token[0] == "Etiqueta de Apertura" and (token[2].strip().lower().startswith("<h1") or token[2].strip().lower().startswith("<a") or token[2].strip().lower().startswith("<h2") or token[2].strip().lower().startswith("<label") or token[2].strip().lower().startswith("<form") or token[2].strip().lower().startswith("<button") or token[2].strip().lower().startswith("<p") or token[2].strip().lower().startswith("<ol") or token[2].strip().lower().startswith("<li") or token[2].strip().lower().startswith("<div"))
+
+        def etiquetaC(self):
+            self.index -=1
+            token = self.obtener_token()
+        
+            if(token[0] == "Etiqueta de Cierre" and (token[2].strip().lower() == "</h1>" or token[2].strip().lower().startswith("</a>")  or token[2].strip().lower() == "</h2>" or token[2].strip().lower() == "</label>" or token[2].strip().lower() == "</form>" or token[2].strip().lower() == "</div>" or token[2].strip().lower() == "</button>" or token[2].strip().lower() == "</p>" or token[2].strip().lower() == "</ol>" or token[2].strip().lower() == "</li>")):
+                self.elemetosA.append(["\nELEMENTO"]) #Cargamos el no terminal a la lista
+                self.elemetosA.append(["ETIQUETA_C"]) #Cargamos el no terminal a la lista
+                self.tokenG = token
+                self.cC +=1
+                self.elemetosA.append([self.tokenG[2]]) #Cargamos el no terminal a la lista
+            else:
+                self.errores.append(["REVISAR ETIQUETA CIERRE: " , self.tokenG[2]])
+            return token and token[0] == "Etiqueta de Cierre" and (token[2].strip().lower() == "</h1>" or token[2].strip().lower().startswith("</a>")  or token[2].strip().lower() == "</h2>" or token[2].strip().lower() == "</label>" or token[2].strip().lower() == "</form>" or token[2].strip().lower() == "</div>" or token[2].strip().lower() == "</button>" or token[2].strip().lower() == "</p>" or token[2].strip().lower() == "</ol>" or token[2].strip().lower() == "</li>")
+
+        def relleno(self):
+            token = self.obtener_token()
+            self.tokenG = token
+            return token and (token[0] == "Texto")
+        
+        def relleno2(self):
+            self.index -=1
+            token = self.obtener_token()
+            if(token[0] == "Texto"):
+                self.elemetosA.append(["\nELEMENTO"]) #Cargamos el no terminal a la lista
+                self.elemetosA.append(["RELLENO"]) #Cargamos el no terminal a la lista
+                self.elemetosA.append(["TEXTO"]) #Cargamos el no terminal a la lista
+                self.tokenG = token
+                self.elemetosA.append([self.tokenG[2]]) #Cargamos el no terminal a la lista
+            else:
+                self.errores.append(["REVISAR RELLENO: " , self.tokenG[2]])
+            return token and (token[0] == "Texto")
+        
+        def erroresR(self):
+            if(self.bS):
+                self.errores.append(["ANALISIS SINTÁCTICO EXITOSO"])
+            else:
+                self.errores.append(["ANÁLISIS SINTÁCTICO FALLIDO"])
+            
+            '''self.errores.append(["ETIQUETAS UNICAS: ", self.cU])
+            self.errores.append(["ETIQUETAS DE APERTURA: ", self.cA])
+            self.errores.append(["ETIQUETAS DE CIERRE: ", self.cC])'''
+            
+            if(self.cA != self.cC):
+               self.errores.append(["!VERIFICAR APERTURA Y CIERRE DE ETIQUETAS!"])
+            return self.errores
+        
+        
+        def arbol(self):
+            return self.elemetosA

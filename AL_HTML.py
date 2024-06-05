@@ -1,11 +1,10 @@
-#Importamos la libreria de expresiones regulares 
 import re
 
 class AL_HTML:
     cadena = None
     # Lista de tokens
     tokens_html = {
-        "!DOCTYPE": "Declaracion de tipo documento",
+        "!DOCTYPE html": "Declaracion de tipo documento",
         "a": "Enlace a pagina de internet",
         "p": "Parrafo",
         "h1": "Titulo 1",
@@ -46,7 +45,6 @@ class AL_HTML:
         "i": "Texto en cursiva",
         "u": "Texto subrayado",
         "s": "Texto tachado",
-        "em": "Enfasis de texto",
         "font": "Tamaño y estilo de fuente",
         "basefont": "Tamaño base de la fuente",
         "center": "Centrado de contenido",
@@ -75,7 +73,8 @@ class AL_HTML:
         "label": "Etiqueta de texto",
         "button": "Boton"
     }
-    
+    auto_closed_tags = ["br", "img", "hr", "meta", "link", "input"]
+
     def __init__(self, cadena):
         self.cadena = cadena
 
@@ -84,15 +83,20 @@ class AL_HTML:
         return componentes_lex
            
     def tipo_etiqueta(self, t_e):
-        #print("Estamos validando la etiqueta:", t_e)
-        v_etiqueta = r"</?([a-zA-Z][a-zA-Z0-9]*)\s*[^>]*>"
+        v_etiqueta = r"</?([a-zA-Z][a-zA-Z0-9]*)\s*([^>]*)/?\s*>"
         validacion = re.match(v_etiqueta, t_e)
         if validacion:
+            etiqueta_completa = validacion.group(0)
+            if etiqueta_completa != t_e:
+                return "No reconocido"
             tipo_etiqueta = validacion.group(1).lower()
-            tipo_etiqueta = self.tokens_html.get(tipo_etiqueta, "No reconocido")
-            return tipo_etiqueta
+            if tipo_etiqueta not in self.tokens_html:
+                return "No reconocido"
+            if t_e.endswith("/>") and tipo_etiqueta not in self.auto_closed_tags:
+                return "No reconocido"
+            return self.tokens_html.get(tipo_etiqueta, "No reconocido")
         else:
-            print("Etiqueta No Valida Para HTML 3.2", "\n")
+            return "No reconocido"
       
     def extraer_atributos(self, t_e):
         atributos = {}
@@ -120,9 +124,9 @@ class AL_HTML:
                             i = fin_comentario + 3
                             estado = "comenzar"
                             continue
-                    elif self.cadena[i: i+9].lower() == "<!doctype":
+                    elif self.cadena[i: i+14].lower() == "<!doctype html":
                         estado = "tipo documento"
-                        fin_tipo_documento = self.cadena.find(">", i+14)
+                        fin_tipo_documento = self.cadena.find(">")
                         if fin_tipo_documento != -1:
                             tokens.append(["Tipo Documento", "Declaracion del Tipo de Documento", self.cadena[i:fin_tipo_documento+1]])
                             i = fin_tipo_documento + 1
@@ -143,15 +147,22 @@ class AL_HTML:
                     if scan.startswith("</"):
                         tipo_etiqueta = scan
                         etiqueta = self.tipo_etiqueta(tipo_etiqueta)
-                        tokens.append(["Etiqueta de Cierre", etiqueta, scan])
+                        if etiqueta == "No reconocido":
+                            tokens.append(["Error", etiqueta, scan])
+                        else:
+                            tokens.append(["Etiqueta de Cierre", etiqueta, scan])
                     else:
                         tipo_etiqueta = scan
-                        etiqueta = self.tipo_etiqueta(tipo_etiqueta)
-                        atributos = self.extraer_atributos(scan)
-                        tokens.append(["Etiqueta de Apertura", etiqueta, scan])
-                        if atributos:
-                            for attr, val in atributos.items():
-                                tokens.append(["Atributo", attr, val])
+                        etiqueta  = self.tipo_etiqueta(tipo_etiqueta)
+                        if etiqueta == "No reconocido":
+                            tokens.append(["Error", etiqueta, scan])
+                        else:
+                            tokens.append(["Etiqueta de Apertura", etiqueta, scan])
+                            if not scan.endswith("/>"):
+                                atributos = self.extraer_atributos(scan)
+                                if atributos:
+                                    for attr, val in atributos.items():
+                                        tokens.append(["Atributo", attr, val])
                     scan = ""
                     estado = "comenzar"
                 else:
@@ -168,10 +179,4 @@ class AL_HTML:
         if scan:
             tokens.append(["Texto", "Texto plano", scan])
         return tokens
-                
-    def valida_atributos(self):
-        pass
-      
-    def valida_aperturas_cierres(self):
-        pass
 

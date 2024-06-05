@@ -20,6 +20,9 @@ largo_pantalla2 = lectura.winfo_screenheight() - 150
 # Espaciado
 espacio = None
 
+#Variable para recuperar los errores del analizador sintactico
+erroresS = None
+
 def main():
     lectura_c()
 
@@ -79,7 +82,7 @@ def centrar_elemento(elemento, ancho_columna):
     return " " * espacios_izquierda + elemento_str 
 
 def analizadorS():
-    #Ancho del text ayea para mostrar el arbol sintactico
+    #Ancho del text area para mostrar el arbol sintactico
     ancho_columna = 396
     #Obtenemos la cadena de texto ingresada
     cadena = TextArea.get("1.0", END)
@@ -87,26 +90,32 @@ def analizadorS():
     AL = AL_HTML(cadena)
     # Obtenemos los componentes lexicos devueltos por el analizador lexico
     tokens = AL.A_Lex()
-    mostrarMensaje(tokens)
-    
+    mostrarMensaje(tokens)  # Mostrar mensaje antes de realizar el análisis sintáctico
+
+    # Crear la ventana de análisis sintáctico después de mostrar el mensaje
+    lectura.after(500, lambda: realizarAnalisisSintactico(tokens))
+
+def realizarAnalisisSintactico(tokens):
     AS = AS_HTML(tokens)
     res = AS.programa()
     elementosA = AS.arbol()
-    detalles = AS.erroresR()
+    erroresS = AS.erroresR()
+
     # Crear una ventana para mostrar el resultado del análisis sintáctico
     lectura3 = Toplevel(lectura)
     posicion_x_lectura3 = lectura.winfo_x()
-    lectura3.geometry('{}x{}+{}+{}'.format(int(ancho_pantalla2), int(largo_pantalla2), posicion_x_lectura3, lectura.winfo_y()))
+    lectura3.geometry('{}x{}+{}+{}'.format(int(ancho_pantalla), int(largo_pantalla), 25, 20))
     lectura3.title("Analizador Sintactico")
     lectura3.configure(bg='#253745')
 
     etiqueta = Label(lectura3, text="ARBOL SINTÁCTICO - HTML", bg='#253745', fg='white')
     etiqueta.pack(pady=(25, 15))
 
-    TextArea2 = scrolledtext.ScrolledText(lectura3, font=("nunito", 10), width=198, height=39)
+    TextArea2 = scrolledtext.ScrolledText(lectura3, font=("nunito", 10), width=90, height=38)
     TextArea2.pack()
-    
+
     if res:
+        TextArea2.delete("1.0", END)  # Limpiar el contenido de TextArea3
         if elementosA:
             for fila in elementosA:
                 num_columnas = len(fila)
@@ -121,39 +130,43 @@ def analizadorS():
                         TextArea2.insert(END, "   |   ")
                     else:
                         TextArea2.insert(END, "\n")
-                        
-    
+
     else:
         TextArea2.insert(END, "Análisis Sintáctico Fallido.\n")
- 
-    # Configuramos el color para las mayúsculas
-    TextArea2.tag_config("mayusculas", foreground="#709393" , font=("nunito", 10, "bold"))
-    errores(detalles)
-    lectura3.mainloop()
 
+    # Configuramos el color para las mayúsculas
+    TextArea2.tag_config("mayusculas", foreground="#709393", font=("nunito", 10, "bold"))
+
+    errores(erroresS)
 
 def errores(detalles):
     # Crear una ventana para mostrar el resultado del análisis sintáctico
     lectura4 = Toplevel(lectura)
-    posicion_x_lectura3 = lectura.winfo_x()
-    lectura4.geometry('{}x{}+{}+{}'.format(int(ancho_pantalla2/4), int(500), posicion_x_lectura3, lectura.winfo_y()))
+    posicion_x_lectura3 = lectura.winfo_x() + lectura.winfo_width() + 10
+    lectura4.geometry('{}x{}+{}+{}'.format(int(ancho_pantalla), int(largo_pantalla), posicion_x_lectura3, lectura.winfo_y()))
     lectura4.title("Analizador Sintactico")
     lectura4.configure(bg='#870C1B')
 
     etiqueta = Label(lectura4, text="DETALLES - ANÁLISIS", bg='#870C1B', fg='white')
     etiqueta.pack(pady=(25, 15))
 
-    TextArea3 = scrolledtext.ScrolledText(lectura4, font=("nunito", 10), width=42, height=33)
+    TextArea3 = scrolledtext.ScrolledText(lectura4, font=("nunito", 9), width=90, height=38)
     TextArea3.pack(pady=(0, 50))  # Añadir un poco menos de espacio vertical
-        
+    
+    # Configuramos el color para las mayúsculas
+    TextArea3.tag_config("minusculas", foreground="#8C004B", font=("nunito", 10, "bold"))
+    
     if detalles:
+        TextArea3.delete("1.0", END)  # Limpiar el contenido de TextArea3
         for fila in detalles:
             num_columnas = len(fila)
             for i, elemento in enumerate(fila):
-                    TextArea3.insert(END, elemento)
+                elemento_str = str(elemento)
+                if elemento_str.isupper():                 
+                    TextArea3.insert(END, elemento_str)
+                else:
+                    TextArea3.insert(END, elemento_str, "minusculas")
             TextArea3.insert(END, "\n\n")
-                
-  
-        
+            
 if __name__ == "__main__":
     main()
